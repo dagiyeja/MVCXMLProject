@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Connection -->
+<!DOCTYPE configuration  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-config.dtd"> 
+<!-- 
+     configuration(a?,b*,c+,d,(e|k))
+     ======================
+                                        사용   반복
+     ======================
+       ?         O,X  X
+     ======================
+       *         O,X  O
+     ======================
+       +          O   O,X
+     ======================
+      default     O   X
+     ======================
+       |          선택  tr(th|td)
+     ======================
+ -->
+ <configuration>
+   <properties resource="db.properties"/>
+   <typeAliases>
+     <typeAlias type="com.sist.dao.BoardVO" alias="Board"/>
+   </typeAliases>
+   <environments default="development">
+     <environment id="development">
+      <transactionManager type="JDBC"/>
+      <!--  
+         JDBC
+         MANAGED
+         transaction : 일괄처리 
+         COMMIT/ROLLBACK
+      -->
+      <dataSource type="POOLED">
+      <!-- 
+          UNPOOLED
+          POOLED
+          JNDI
+          
+          public class PooledDataSource
+          {
+             private String driver;
+          }
+       -->
+       <property name="driver" value="${driver}"/>
+       <property name="url" value="${url}"/>
+       <property name="username" value="${username}"/>
+       <property name="password" value="${password}"/>
+      </dataSource>
+     </environment>
+   </environments>
+   <mappers>
+     <!-- 
+         <!ENTITY nbsp " "> ==> &nbsp;
+      -->
+     <mapper resource="com/sist/dao/board-mapper.xml"/>
+   </mappers>
+ </configuration>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

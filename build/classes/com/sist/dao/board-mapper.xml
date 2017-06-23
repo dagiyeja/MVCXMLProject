@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sist.dao.board-mapper">
+  <!-- 데이터 추가  -->
+  <insert id="boardInsert" parameterType="Board">
+    <selectKey keyProperty="no" resultType="int" order="BEFORE">
+     SELECT NVL(MAX(no)+1,1) as no FROM mvcBoard
+    </selectKey>
+    INSERT INTO mvcBoard(no,name,subject,content,pwd,group_id)
+    VALUES(#{no},#{name},
+    #{subject},#{content},
+    #{pwd},(SELECT NVL(MAX(group_id)+1,1) FROM mvcBoard))
+    <!-- 
+         #{no} ==> ?
+         INSERT INTO mvcBoard(no,name,subject,content,pwd,group_id)
+         VALUES(?,?,?,?,?,(SELECT NVL(MAX(group_id)+1,1) FROM mvcBoard));
+         
+         ps.setInt(1,board.getNo());
+         ps.setString(2);
+         ps.setString(3);
+         ps.setString(4);
+         ps.setString(5);
+     -->
+  </insert>
+  <!-- 
+               단일데이터 
+               다중데이터 : Board,Map
+               
+               BETWEEN  1 AND 10
+                       11     20 
+   -->
+  <select id="boardListData" resultType="Board" 
+      parameterType="java.util.Map">
+     SELECT no,subject,name,regdate,TO_CHAR(regdate,'YYYY-MM-DD') as day,hit,group_tab,num
+     FROM (SELECT no,subject,name,regdate,hit,group_tab,rownum as num 
+     FROM (SELECT no,subject,name,regdate,hit,group_tab 
+     FROM mvcBoard ORDER BY group_id DESC,group_step ASC))
+     WHERE num BETWEEN #{start} AND #{end}
+  </select>
+  <!-- 총페이지 구하기  
+                숫자함수
+         ROUND() : 반올림  ROUND(123.56,1) ==> 123.6 
+         TRUNC() : 버림    TRUNC(123.56,1) ==> 123.5
+         MOD() : 나머지   MOD(10,2) = 0
+         CEIL() : 올림   CEIL(123.5) ==> 124
+                문자함수
+         SUBSTR() : 문자 분해
+         INSTR() : 문자의 위치 확인
+         RPAD 
+                변환함수
+         TO_CHAR : 시간 출력 (등록시간)
+                날짜함수
+         SYSDATE
+         MONTHS_BETWEEN,ADD_MONTH
+                기타함수
+         DECODE,CASE,NVL
+         ===========
+           Trigger,Procedure
+                집합함수 
+         COUNT
+         MAX
+  -->
+  <!-- 
+       <!ELEMENT select (#PCDATA)>
+       <!ATTLIST select id ID #REQUIRED>
+   -->
+  <select id="boardTotalPage" resultType="int">
+     SELECT CEIL(COUNT(*)/10) FROM mvcBoard
+  </select>
+  <!-- 내용보기 -->
+  <update id="boardHitIncrement" parameterType="int">
+    UPDATE mvcBoard SET
+    hit=hit+1
+    WHERE no=#{no}
+  </update>
+  <select id="boardContentData" parameterType="int"
+   resultType="Board">
+    SELECT no,name,subject,content,TO_CHAR(regdate,'YYYY-MM-DD') as day,hit
+    FROM mvcBoard 
+    WHERE no=#{no} 
+  </select>
+  <!-- 수정 -->
+  <select id="boardGetPwd" parameterType="int" resultType="String">
+    SELECT pwd FROM mvcBoard
+    WHERE no=#{no}
+  </select>
+  <update id="boardUpdate" parameterType="Board">
+    UPDATE mvcBoard SET
+    name=#{name},subject=#{subject},
+    content=#{content}
+    WHERE no=#{no}
+  </update>
+  <!-- 답변 올리기 -->
+  <!-- 정보(Group) -->
+  <select id="boardGroupInfoData" resultType="Board" parameterType="int">
+    SELECT group_id,group_step,group_tab
+    FROM mvcBoard
+    WHERE no=#{no}
+  </select>
+  <!-- 
+                       gi  gs  gt  root depth
+        AAAAA           1   0  0          3   
+          
+          =>BBBBB       1   2  1(2)       0
+            
+          
+          =>DDDDD       1   1  1          0
+          =>                              1
+          
+   -->
+  <update id="boardGroupStepIncrement" parameterType="Board">
+    UPDATE mvcBoard SET
+    group_step=group_step+1
+    WHERE group_id=#{group_id} AND group_step>#{group_step}
+  </update>
+  <insert id="boardReplyInsert" parameterType="Board">
+    <selectKey keyProperty="no" resultType="int" order="BEFORE">
+     SELECT NVL(MAX(no)+1,1) as no FROM mvcBoard
+    </selectKey>
+    INSERT INTO mvcBoard(no,name,subject,content,pwd,group_id,
+    group_step,group_tab,root)
+    VALUES(#{no},#{name},
+    #{subject},#{content},
+    #{pwd},#{group_id},#{group_step},#{group_tab},#{root})
+  </insert>
+  <update id="boardDepthIncrement" parameterType="int">
+    UPDATE mvcBoard SET
+    depth=depth+1
+    WHERE no=#{no}
+  </update>
+  <!-- Delete -->
+  <select id="boardGetDepth" resultType="Board" 
+      parameterType="int">
+    SELECT depth,root FROM mvcBoard
+    WHERE no=#{no}
+  </select>
+  <!-- 
+      depth = 0  Delete
+      depth != 0 UPDATE
+   -->
+   <delete id="boardDelete" parameterType="int">
+     DELETE FROM mvcBoard
+     WHERE no=#{no}
+   </delete>
+   <update id="boardSubjectUpdate" parameterType="int">
+     UPDATE mvcBoard SET
+     subject='관리자가 삭제한 게시물입니다',
+     content='관리자가 삭제한 게시물입니다'
+     WHERE no=#{no}
+   </update>
+   <update id="boardDepthDecrement" parameterType="int">
+     UPDATE mvcBoard SET
+     depth=depth-1
+     WHERE no=#{no}
+   </update>
+   <!-- find 
+        fs=name
+        ss='홍'
+   -->
+   <select id="boardFindData" 
+      parameterType="java.util.Map" resultType="Board">
+     SELECT no,subject,name,regdate,hit 
+     FROM mvcBoard
+     WHERE ${fs} LIKE '%'||#{ss}||'%'
+   </select>
+</mapper>
+
+
+
+
+
+
+
+
